@@ -1,3 +1,51 @@
+<?php
+require_once __DIR__ . '/../config/init.php';
+require_once __DIR__ . '/../classes/Auth.php';
+require_once __DIR__ . '/../classes/Calificaciones.php';
+require_once __DIR__ . '/../classes/Estudiantes.php';
+require_once __DIR__ . '/../classes/Reportes.php';
+
+$auth = new Auth();
+if (!$auth->isLoggedIn()) {
+    header('Location: ../login.php');
+    exit;
+}
+
+// Solo administradores y coordinadoras pueden acceder
+if (!$auth->hasPermission(['Administrador', 'Coordinadora'])) {
+    header('Location: ../matriz_calificaciones.php');
+    exit;
+}
+
+$calificaciones = new Calificaciones();
+$estudiantes = new Estudiantes();
+$reportes = new Reportes();
+
+// Obtener estadísticas generales
+$grados = $calificaciones->getGrados();
+$areas = $calificaciones->getAreas();
+$periodos = $calificaciones->getPeriodos();
+
+// Estadísticas del sistema
+$periodo_actual = null;
+if (!empty($periodos)) {
+    $periodo_actual = array_filter($periodos, function($p) { return $p['activo'] == 1; });
+    if (empty($periodo_actual)) {
+        $periodo_actual = $periodos[0]; // Tomar el primer período si no hay activo
+    } else {
+        $periodo_actual = reset($periodo_actual);
+    }
+}
+
+$periodo_id = $periodo_actual['id'] ?? 1;
+
+$resumen_general = $reportes->getResumenGeneral($periodo_id);
+$total_estudiantes = count($estudiantes->getAll());
+
+// Verificar que las variables de sesión existan
+$user_name = $_SESSION['user_name'] ?? 'Usuario';
+$user_rol = $_SESSION['user_rol'] ?? 'Sin rol';
+?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -37,12 +85,12 @@
                 <div class="col-md-4 text-end">
                     <span class="badge badge-modern" style="background: linear-gradient(45deg, #fbbf24, #f59e0b); color: #92400e; font-size: 0.9rem;">
                         <i class="bi bi-shield-check me-1"></i>
-                        <?php echo $_SESSION['user_rol']; ?>
+                        <?php echo htmlspecialchars($user_rol); ?>
                     </span>
                     <div class="dropdown d-inline-block ms-3">
                         <button class="btn btn-light btn-modern dropdown-toggle" type="button" data-bs-toggle="dropdown">
                             <i class="bi bi-person-circle me-2"></i>
-                            <?php echo $_SESSION['user_name']; ?>
+                            <?php echo htmlspecialchars($user_name); ?>
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end">
                             <li><a class="dropdown-item" href="../matriz_calificaciones.php">
@@ -90,7 +138,10 @@
                             </div>
                             <div>
                                 <?php 
-                                $total_eval = array_sum(array_column($resumen_general, 'total_evaluaciones'));
+                                $total_eval = 0;
+                                if (!empty($resumen_general)) {
+                                    $total_eval = array_sum(array_column($resumen_general, 'total_evaluaciones'));
+                                }
                                 ?>
                                 <h3 class="stat-number-admin mb-0"><?php echo $total_eval; ?></h3>
                                 <p class="text-muted mb-0 fw-semibold">Evaluaciones</p>
@@ -240,10 +291,11 @@
                     <div class="card-header" style="background: var(--gradient-primary); color: white; padding: 1.5rem;">
                         <h5 class="mb-0 fw-bold">
                             <i class="bi bi-bar-chart-fill me-2"></i>
-                            Resumen por Nivel Educativo - <?php echo $periodo_actual['nombre'] ?? 'Período Actual'; ?>
+                            Resumen por Nivel Educativo - <?php echo ($periodo_actual['nombre'] ?? 'Período Actual') . ' ' . ($periodo_actual['año'] ?? date('Y')); ?>
                         </h5>
                     </div>
                     <div class="card-body p-0">
+                        <?php if (!empty($resumen_general)): ?>
                         <div class="table-responsive">
                             <table class="table table-hover mb-0">
                                 <thead style="background: var(--gradient-primary); color: white;">
@@ -274,8 +326,8 @@
                                 <tbody>
                                     <?php foreach ($resumen_general as $nivel): ?>
                                         <?php 
-                                        $total_calif = $nivel['destacado'] + $nivel['esperado'] + $nivel['proceso'] + $nivel['inicio'];
-                                        $porcentaje_ad_a = $total_calif > 0 ? round((($nivel['destacado'] + $nivel['esperado']) / $total_calif) * 100, 1) : 0;
+                                        $total_calif = ($nivel['destacado'] ?? 0) + ($nivel['esperado'] ?? 0) + ($nivel['proceso'] ?? 0) + ($nivel['inicio'] ?? 0);
+                                        $porcentaje_ad_a = $total_calif > 0 ? round(((($nivel['destacado'] ?? 0) + ($nivel['esperado'] ?? 0)) / $total_calif) * 100, 1) : 0;
                                         ?>
                                         <tr class="hover-lift">
                                             <td>
@@ -284,39 +336,39 @@
                                                         <i class="bi bi-mortarboard"></i>
                                                     </div>
                                                     <div>
-                                                        <div class="fw-bold text-dark"><?php echo $nivel['nivel']; ?></div>
+                                                        <div class="fw-bold text-dark"><?php echo htmlspecialchars($nivel['nivel'] ?? 'N/A'); ?></div>
                                                         <small class="text-muted">Nivel educativo</small>
                                                     </div>
                                                 </div>
                                             </td>
                                             <td class="text-center">
                                                 <span class="badge badge-admin-primary" style="font-size: 0.9rem;">
-                                                    <?php echo $nivel['total_estudiantes']; ?>
+                                                    <?php echo $nivel['total_estudiantes'] ?? 0; ?>
                                                 </span>
                                             </td>
                                             <td class="text-center">
                                                 <span class="badge badge-admin" style="background: var(--gradient-info); font-size: 0.9rem;">
-                                                    <?php echo $nivel['total_evaluaciones']; ?>
+                                                    <?php echo $nivel['total_evaluaciones'] ?? 0; ?>
                                                 </span>
                                             </td>
                                             <td class="text-center">
                                                 <span class="badge badge-admin-success" style="font-size: 0.9rem;">
-                                                    <?php echo $nivel['destacado']; ?>
+                                                    <?php echo $nivel['destacado'] ?? 0; ?>
                                                 </span>
                                             </td>
                                             <td class="text-center">
                                                 <span class="badge badge-admin-primary" style="font-size: 0.9rem;">
-                                                    <?php echo $nivel['esperado']; ?>
+                                                    <?php echo $nivel['esperado'] ?? 0; ?>
                                                 </span>
                                             </td>
                                             <td class="text-center">
                                                 <span class="badge badge-admin-warning" style="font-size: 0.9rem;">
-                                                    <?php echo $nivel['proceso']; ?>
+                                                    <?php echo $nivel['proceso'] ?? 0; ?>
                                                 </span>
                                             </td>
                                             <td class="text-center">
                                                 <span class="badge badge-admin-danger" style="font-size: 0.9rem;">
-                                                    <?php echo $nivel['inicio']; ?>
+                                                    <?php echo $nivel['inicio'] ?? 0; ?>
                                                 </span>
                                             </td>
                                             <td class="text-center">
@@ -329,7 +381,7 @@
                                             </td>
                                             <td class="text-center">
                                                 <button class="btn btn-sm btn-admin btn-admin-primary" 
-                                                        onclick="verDetalleNivel('<?php echo $nivel['nivel']; ?>')"
+                                                        onclick="verDetalleNivel('<?php echo htmlspecialchars($nivel['nivel'] ?? ''); ?>')"
                                                         data-bs-toggle="tooltip"
                                                         title="Ver detalles del nivel">
                                                     <i class="bi bi-eye"></i>
@@ -340,6 +392,13 @@
                                 </tbody>
                             </table>
                         </div>
+                        <?php else: ?>
+                        <div class="text-center p-5">
+                            <i class="bi bi-info-circle" style="font-size: 3rem; color: #6c757d;"></i>
+                            <h5 class="mt-3 text-muted">No hay datos disponibles</h5>
+                            <p class="text-muted">No se encontraron estadísticas para mostrar. Verifique que existan períodos y datos configurados.</p>
+                        </div>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
@@ -393,23 +452,34 @@
     <script src="../assets/js/main.js"></script>
     <script>
         function verDetalleNivel(nivel) {
-            SystemJS.Notifications.info(`Cargando detalles para ${nivel}...`);
-            
-            // Simular carga y mostrar información
-            setTimeout(() => {
-                SystemJS.Confirm.show(
-                    `Detalles del nivel ${nivel}:\n\n• Funcionalidad completa disponible\n• Reportes detallados\n• Gestión de estudiantes\n• Seguimiento de progreso`,
-                    `Información del ${nivel}`,
-                    {
-                        confirmText: 'Ver Matriz',
-                        cancelText: 'Cerrar'
+            if (typeof SystemJS !== 'undefined' && SystemJS.Notifications) {
+                SystemJS.Notifications.info(`Cargando detalles para ${nivel}...`);
+                
+                setTimeout(() => {
+                    if (SystemJS.Confirm) {
+                        SystemJS.Confirm.show(
+                            `Detalles del nivel ${nivel}:\n\n• Funcionalidad completa disponible\n• Reportes detallados\n• Gestión de estudiantes\n• Seguimiento de progreso`,
+                            `Información del ${nivel}`,
+                            {
+                                confirmText: 'Ver Matriz',
+                                cancelText: 'Cerrar'
+                            }
+                        ).then(confirmed => {
+                            if (confirmed) {
+                                window.location.href = '../matriz_calificaciones.php';
+                            }
+                        });
+                    } else {
+                        if (confirm(`Ver matriz de calificaciones para ${nivel}?`)) {
+                            window.location.href = '../matriz_calificaciones.php';
+                        }
                     }
-                ).then(confirmed => {
-                    if (confirmed) {
-                        window.location.href = '../matriz_calificaciones.php';
-                    }
-                });
-            }, 500);
+                }, 500);
+            } else {
+                if (confirm(`Ver matriz de calificaciones para ${nivel}?`)) {
+                    window.location.href = '../matriz_calificaciones.php';
+                }
+            }
         }
 
         // Animaciones de entrada
@@ -418,17 +488,31 @@
             const statNumbers = document.querySelectorAll('.stat-number-admin');
             statNumbers.forEach(element => {
                 const target = parseInt(element.textContent);
-                SystemJS.Effects.countUp(element, target, 1500);
+                if (target > 0) {
+                    let current = 0;
+                    const increment = target / 50;
+                    const timer = setInterval(() => {
+                        current += increment;
+                        if (current >= target) {
+                            element.textContent = target;
+                            clearInterval(timer);
+                        } else {
+                            element.textContent = Math.floor(current);
+                        }
+                    }, 30);
+                }
             });
 
             // Animar barras de progreso
             const progressBars = document.querySelectorAll('.admin-progress .progress-bar');
             progressBars.forEach(bar => {
                 const width = bar.style.width;
-                bar.style.width = '0%';
-                setTimeout(() => {
-                    bar.style.width = width;
-                }, 500);
+                if (width) {
+                    bar.style.width = '0%';
+                    setTimeout(() => {
+                        bar.style.width = width;
+                    }, 500);
+                }
             });
 
             // Tooltip initialization
@@ -444,295 +528,5 @@
             console.log(`🔄 Panel actualizado: ${timestamp}`);
         }, 300000);
     </script>
-</body>
-</html><?php
-// Iniciar sesión si no está activa
-if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
-
-require_once __DIR__ . '/../classes/Auth.php';
-require_once __DIR__ . '/../classes/Calificaciones.php';
-require_once __DIR__ . '/../classes/Estudiantes.php';
-require_once __DIR__ . '/../classes/Reportes.php';
-
-$auth = new Auth();
-if (!$auth->isLoggedIn()) {
-    header('Location: ../login.php');
-    exit;
-}
-
-// Solo administradores y coordinadoras pueden acceder
-if (!$auth->hasPermission(['Administrador', 'Coordinadora'])) {
-    header('Location: ../matriz_calificaciones.php');
-    exit;
-}
-
-$calificaciones = new Calificaciones();
-$estudiantes = new Estudiantes();
-$reportes = new Reportes();
-
-// Obtener estadísticas generales
-$grados = $calificaciones->getGrados();
-$areas = $calificaciones->getAreas();
-$periodos = $calificaciones->getPeriodos();
-
-// Estadísticas del sistema
-$periodo_actual = array_filter($periodos, function($p) { return $p['activo'] == 1; });
-$periodo_actual = reset($periodo_actual);
-$periodo_id = $periodo_actual['id'] ?? 1;
-
-$resumen_general = $reportes->getResumenGeneral($periodo_id);
-$total_estudiantes = count($estudiantes->getAll());
-?>
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Administración - Sistema de Calificaciones</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
-    <style>
-        .admin-header {
-            background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);
-            color: white;
-            padding: 2rem 0;
-        }
-        .stat-card {
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            padding: 2rem;
-            margin-bottom: 2rem;
-            border-left: 5px solid;
-        }
-        .stat-card.estudiantes { border-left-color: #007bff; }
-        .stat-card.evaluaciones { border-left-color: #28a745; }
-        .stat-card.grados { border-left-color: #ffc107; }
-        .stat-card.areas { border-left-color: #6f42c1; }
-        
-        .menu-card {
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            padding: 1.5rem;
-            text-decoration: none;
-            color: inherit;
-            transition: transform 0.3s ease;
-        }
-        .menu-card:hover {
-            transform: translateY(-5px);
-            text-decoration: none;
-            color: inherit;
-        }
-        .menu-icon {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-        }
-    </style>
-</head>
-<body class="bg-light">
-    <!-- Header -->
-    <div class="admin-header">
-        <div class="container">
-            <div class="row align-items-center">
-                <div class="col-md-8">
-                    <h1 class="h2 mb-0">🔧 Panel de Administración</h1>
-                    <p class="mb-0">Gestión y supervisión del sistema de calificaciones</p>
-                </div>
-                <div class="col-md-4 text-end">
-                    <span class="badge bg-warning text-dark fs-6 me-2"><?php echo $_SESSION['user_rol']; ?></span>
-                    <div class="dropdown d-inline-block">
-                        <button class="btn btn-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                            <?php echo $_SESSION['user_name']; ?>
-                        </button>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="../matriz_calificaciones.php">Ver Matriz</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="../logout.php">Cerrar Sesión</a></li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="container mt-4">
-        <!-- Estadísticas Generales -->
-        <div class="row mb-4">
-            <div class="col-md-3">
-                <div class="stat-card estudiantes">
-                    <div class="d-flex align-items-center">
-                        <div class="me-3">
-                            <i class="bi bi-people-fill text-primary" style="font-size: 2.5rem;"></i>
-                        </div>
-                        <div>
-                            <h3 class="mb-0"><?php echo $total_estudiantes; ?></h3>
-                            <p class="text-muted mb-0">Estudiantes</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="stat-card evaluaciones">
-                    <div class="d-flex align-items-center">
-                        <div class="me-3">
-                            <i class="bi bi-check-circle-fill text-success" style="font-size: 2.5rem;"></i>
-                        </div>
-                        <div>
-                            <?php 
-                            $total_eval = array_sum(array_column($resumen_general, 'total_evaluaciones'));
-                            ?>
-                            <h3 class="mb-0"><?php echo $total_eval; ?></h3>
-                            <p class="text-muted mb-0">Evaluaciones</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="stat-card grados">
-                    <div class="d-flex align-items-center">
-                        <div class="me-3">
-                            <i class="bi bi-layers-fill text-warning" style="font-size: 2.5rem;"></i>
-                        </div>
-                        <div>
-                            <h3 class="mb-0"><?php echo count($grados); ?></h3>
-                            <p class="text-muted mb-0">Grados</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="stat-card areas">
-                    <div class="d-flex align-items-center">
-                        <div class="me-3">
-                            <i class="bi bi-book-fill text-purple" style="font-size: 2.5rem;"></i>
-                        </div>
-                        <div>
-                            <h3 class="mb-0"><?php echo count($areas); ?></h3>
-                            <p class="text-muted mb-0">Áreas</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Menú de Gestión -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <h4 class="mb-3">🛠️ Herramientas de Gestión</h4>
-            </div>
-            <div class="col-md-4 mb-3">
-                <a href="estudiantes.php" class="menu-card d-block text-center">
-                    <i class="bi bi-person-plus menu-icon text-primary"></i>
-                    <h5>Gestionar Estudiantes</h5>
-                    <p class="text-muted">Agregar, editar y administrar estudiantes</p>
-                </a>
-            </div>
-            <div class="col-md-4 mb-3">
-                <a href="usuarios.php" class="menu-card d-block text-center">
-                    <i class="bi bi-people menu-icon text-success"></i>
-                    <h5>Gestionar Usuarios</h5>
-                    <p class="text-muted">Administrar docentes y permisos</p>
-                </a>
-            </div>
-            <div class="col-md-4 mb-3">
-                <a href="reportes.php" class="menu-card d-block text-center">
-                    <i class="bi bi-graph-up menu-icon text-info"></i>
-                    <h5>Reportes Avanzados</h5>
-                    <p class="text-muted">Generar reportes y estadísticas</p>
-                </a>
-            </div>
-            <div class="col-md-4 mb-3">
-                <a href="competencias.php" class="menu-card d-block text-center">
-                    <i class="bi bi-list-check menu-icon text-warning"></i>
-                    <h5>Gestionar Competencias</h5>
-                    <p class="text-muted">Configurar competencias por área</p>
-                </a>
-            </div>
-            <div class="col-md-4 mb-3">
-                <a href="configuracion.php" class="menu-card d-block text-center">
-                    <i class="bi bi-gear menu-icon text-secondary"></i>
-                    <h5>Configuración</h5>
-                    <p class="text-muted">Configurar períodos y sistema</p>
-                </a>
-            </div>
-            <div class="col-md-4 mb-3">
-                <a href="../matriz_calificaciones.php" class="menu-card d-block text-center">
-                    <i class="bi bi-grid-3x3-gap menu-icon text-danger"></i>
-                    <h5>Ver Matriz</h5>
-                    <p class="text-muted">Ir a la matriz de calificaciones</p>
-                </a>
-            </div>
-        </div>
-
-        <!-- Resumen por Nivel -->
-        <div class="row">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="mb-0">📊 Resumen por Nivel Educativo - <?php echo $periodo_actual['nombre'] ?? 'Período Actual'; ?></h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-hover">
-                                <thead class="table-dark">
-                                    <tr>
-                                        <th>Nivel</th>
-                                        <th>Estudiantes</th>
-                                        <th>Evaluaciones</th>
-                                        <th>AD (Destacado)</th>
-                                        <th>A (Esperado)</th>
-                                        <th>B (Proceso)</th>
-                                        <th>C (Inicio)</th>
-                                        <th>Progreso</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php foreach ($resumen_general as $nivel): ?>
-                                        <?php 
-                                        $total_calif = $nivel['destacado'] + $nivel['esperado'] + $nivel['proceso'] + $nivel['inicio'];
-                                        $porcentaje_ad_a = $total_calif > 0 ? round((($nivel['destacado'] + $nivel['esperado']) / $total_calif) * 100, 1) : 0;
-                                        ?>
-                                        <tr>
-                                            <td class="fw-bold"><?php echo $nivel['nivel']; ?></td>
-                                            <td>
-                                                <span class="badge bg-primary"><?php echo $nivel['total_estudiantes']; ?></span>
-                                            </td>
-                                            <td>
-                                                <span class="badge bg-info"><?php echo $nivel['total_evaluaciones']; ?></span>
-                                            </td>
-                                            <td>
-                                                <span class="badge bg-success"><?php echo $nivel['destacado']; ?></span>
-                                            </td>
-                                            <td>
-                                                <span class="badge bg-primary"><?php echo $nivel['esperado']; ?></span>
-                                            </td>
-                                            <td>
-                                                <span class="badge bg-warning"><?php echo $nivel['proceso']; ?></span>
-                                            </td>
-                                            <td>
-                                                <span class="badge bg-danger"><?php echo $nivel['inicio']; ?></span>
-                                            </td>
-                                            <td>
-                                                <div class="progress" style="height: 20px;">
-                                                    <div class="progress-bar bg-success" style="width: <?php echo $porcentaje_ad_a; ?>%">
-                                                        <?php echo $porcentaje_ad_a; ?>%
-                                                    </div>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    <?php endforeach; ?>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
