@@ -1,0 +1,451 @@
+/* Estilos específicos para el panel de administración */
+
+.admin-dashboard {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+}
+
+.admin-header {
+    background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+    color: white;
+    padding: 2rem 0;
+    position: relative;
+    overflow: hidden;
+}
+
+.admin-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="1" fill="rgba(255,255,255,0.1)"/></svg>');
+    opacity: 0.3;
+}
+
+.admin-header .container {
+    position: relative;
+    z-index: 1;
+}
+
+/* Estadísticas del dashboard */
+.dashboard-stats {
+    margin-top: -50px;
+    position: relative;
+    z-index: 2;
+}
+
+.stat-card-admin {
+    background: white;
+    border-radius: var(--border-radius-xl);
+    padding: 2rem;
+    box-shadow: var(--shadow-xl);
+    border: none;
+    position: relative;
+    overflow: hidden;
+    transition: all var(--transition-normal);
+    border-left: 5px solid;
+}
+
+.stat-card-admin:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.stat-card-admin::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 100px;
+    height: 100px;
+    opacity: 0.1;
+    transform: translate(30px, -30px);
+}
+
+.stat-card-admin.estudiantes {
+    border-left-color: #3b82f6;
+}
+
+.stat-card-admin.estudiantes::before {
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" fill="%233b82f6" viewBox="0 0 24 24"><path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2ZM21 9V7L15 4V6C15 7.1 14.1 8 13 8C11.9 8 11 7.1 11 6V4L5 7V9C5 10.1 5.9 11 7 11H10V13H9L7 15H17L15 13H14V11H17C18.1 11 19 10.1 19 9Z"/></svg>');
+}
+
+.stat-card-admin.evaluaciones {
+    border-left-color: #10b981;
+}
+
+.stat-card-admin.evaluaciones::before {
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" fill="%2310b981" viewBox="0 0 24 24"><path d="M9,20.42L2.79,14.21L5.62,11.38L9,14.77L18.88,4.88L21.71,7.71L9,20.42Z"/></svg>');
+}
+
+.stat-card-admin.grados {
+    border-left-color: #f59e0b;
+}
+
+.stat-card-admin.grados::before {
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" fill="%23f59e0b" viewBox="0 0 24 24"><path d="M19,3H5C3.9,3 3,3.9 3,5V19C3,20.1 3.9,21 5,21H19C20.1,21 21,20.1 21,19V5C21,3.9 20.1,3 19,3M19,19H5V5H19V19Z"/></svg>');
+}
+
+.stat-card-admin.areas {
+    border-left-color: #8b5cf6;
+}
+
+.stat-card-admin.areas::before {
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" fill="%238b5cf6" viewBox="0 0 24 24"><path d="M19,3H5A2,2 0 0,0 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5A2,2 0 0,0 19,3M19,19H5V5H19V19Z"/></svg>');
+}
+
+/* Números de estadísticas */
+.stat-number-admin {
+    font-size: 2.5rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1;
+}
+
+.stat-icon-admin {
+    width: 70px;
+    height: 70px;
+    border-radius: var(--border-radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    color: white;
+    margin-bottom: 1rem;
+}
+
+/* Menú de gestión */
+.menu-card-admin {
+    background: white;
+    border-radius: var(--border-radius-xl);
+    box-shadow: var(--shadow-md);
+    padding: 2rem;
+    text-decoration: none;
+    color: inherit;
+    transition: all var(--transition-normal);
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.menu-card-admin::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--gradient-primary);
+    transform: scaleX(0);
+    transition: transform var(--transition-normal);
+}
+
+.menu-card-admin:hover {
+    transform: translateY(-8px);
+    box-shadow: var(--shadow-xl);
+    text-decoration: none;
+    color: inherit;
+}
+
+.menu-card-admin:hover::before {
+    transform: scaleX(1);
+}
+
+.menu-icon-admin {
+    font-size: 3.5rem;
+    margin-bottom: 1.5rem;
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Específicos por color */
+.menu-card-admin.estudiantes .menu-icon-admin {
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.menu-card-admin.usuarios .menu-icon-admin {
+    background: var(--gradient-success);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.menu-card-admin.reportes .menu-icon-admin {
+    background: var(--gradient-info);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.menu-card-admin.competencias .menu-icon-admin {
+    background: var(--gradient-warning);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.menu-card-admin.configuracion .menu-icon-admin {
+    background: linear-gradient(135deg, #6b7280, #4b5563);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.menu-card-admin.matriz .menu-icon-admin {
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* Tabla resumen */
+.admin-table {
+    background: white;
+    border-radius: var(--border-radius-xl);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+}
+
+.admin-table .table {
+    margin-bottom: 0;
+}
+
+.admin-table .table thead {
+    background: var(--gradient-primary);
+    color: white;
+}
+
+.admin-table .table thead th {
+    border: none;
+    font-weight: 600;
+    padding: 1rem;
+}
+
+.admin-table .table tbody tr {
+    transition: all var(--transition-fast);
+}
+
+.admin-table .table tbody tr:hover {
+    background: rgba(99, 102, 241, 0.05);
+    transform: scale(1.002);
+}
+
+.admin-table .table tbody td {
+    padding: 1rem;
+    border-color: #e2e8f0;
+    vertical-align: middle;
+}
+
+/* Progress bars en admin */
+.admin-progress {
+    height: 20px;
+    border-radius: 10px;
+    background: #e2e8f0;
+    overflow: hidden;
+}
+
+.admin-progress .progress-bar {
+    background: var(--gradient-success);
+    border-radius: 10px;
+    transition: width var(--transition-normal);
+    position: relative;
+}
+
+.admin-progress .progress-bar::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+/* Badges admin */
+.badge-admin {
+    padding: 0.5rem 1rem;
+    border-radius: var(--border-radius-md);
+    font-weight: 600;
+    font-size: 0.875rem;
+    text-transform: none;
+    box-shadow: var(--shadow-sm);
+}
+
+.badge-admin-primary {
+    background: var(--gradient-primary);
+    color: white;
+}
+
+.badge-admin-success {
+    background: var(--gradient-success);
+    color: white;
+}
+
+.badge-admin-warning {
+    background: var(--gradient-warning);
+    color: white;
+}
+
+.badge-admin-danger {
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
+    color: white;
+}
+
+/* Formularios admin */
+.form-admin {
+    background: white;
+    border-radius: var(--border-radius-xl);
+    box-shadow: var(--shadow-md);
+    padding: 2rem;
+}
+
+.form-control-admin {
+    border: 2px solid #e2e8f0;
+    border-radius: var(--border-radius-md);
+    padding: 0.75rem 1rem;
+    transition: all var(--transition-normal);
+    background: #f8fafc;
+}
+
+.form-control-admin:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(99, 102, 241, 0.1);
+    background: white;
+    outline: none;
+}
+
+.form-label-admin {
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 0.5rem;
+}
+
+/* Botones específicos admin */
+.btn-admin {
+    border: none;
+    border-radius: var(--border-radius-md);
+    padding: 0.75rem 1.5rem;
+    font-weight: 600;
+    text-transform: none;
+    transition: all var(--transition-fast);
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+}
+
+.btn-admin:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-admin-primary {
+    background: var(--gradient-primary);
+    color: white;
+}
+
+.btn-admin-success {
+    background: var(--gradient-success);
+    color: white;
+}
+
+.btn-admin-danger {
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
+    color: white;
+}
+
+/* Alertas admin */
+.alert-admin {
+    border: none;
+    border-radius: var(--border-radius-lg);
+    padding: 1rem 1.5rem;
+    border-left: 4px solid;
+    box-shadow: var(--shadow-sm);
+}
+
+.alert-admin-info {
+    background: rgba(6, 182, 212, 0.1);
+    border-left-color: #06b6d4;
+    color: #0c4a6e;
+}
+
+.alert-admin-success {
+    background: rgba(16, 185, 129, 0.1);
+    border-left-color: #10b981;
+    color: #064e3b;
+}
+
+.alert-admin-warning {
+    background: rgba(245, 158, 11, 0.1);
+    border-left-color: #f59e0b;
+    color: #92400e;
+}
+
+.alert-admin-danger {
+    background: rgba(239, 68, 68, 0.1);
+    border-left-color: #ef4444;
+    color: #991b1b;
+}
+
+/* Responsivo admin */
+@media (max-width: 768px) {
+    .admin-header {
+        padding: 1.5rem 0;
+    }
+    
+    .dashboard-stats {
+        margin-top: -30px;
+    }
+    
+    .stat-card-admin {
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .stat-number-admin {
+        font-size: 2rem;
+    }
+    
+    .menu-card-admin {
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .menu-icon-admin {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .stat-card-admin {
+        padding: 1rem;
+    }
+    
+    .stat-number-admin {
+        font-size: 1.5rem;
+    }
+    
+    .menu-card-admin {
+        padding: 1rem;
+    }
+    
+    .menu-icon-admin {
+        font-size: 2rem;
+    }
+    
+    .admin-table .table tbody td,
+    .admin-table .table thead th {
+        padding: 0.5rem;
+        font-size: 0.875rem;
+    }
+}
