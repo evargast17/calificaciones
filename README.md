@@ -1,69 +1,180 @@
 # Sistema de Calificaciones por Competencias
 
-Sistema web desarrollado en PHP y MySQL para el registro y seguimiento de calificaciones por competencias en instituciones educativas.
+Sistema web desarrollado en PHP y MySQL para el registro y seguimiento de calificaciones por competencias en instituciones educativas del Perú, basado en el Currículo Nacional.
 
-## 📋 Características
+## 📋 Características Principales
 
-- **Gestión de Roles**: Administrador, Coordinadora, Tutor del Aula, Docente Área, Docente Taller
-- **Matriz de Evaluación**: Interfaz visual para registro de calificaciones
-- **Sistema de Competencias**: Gestión de competencias por áreas curriculares
-- **Reportes**: Exportación a Excel/CSV y reportes estadísticos
-- **Panel de Administración**: Gestión completa del sistema
-- **Responsive Design**: Compatible con dispositivos móviles
+### 🎯 Evaluación por Competencias
+- **Matriz Visual Interactiva**: Interfaz intuitiva para registrar calificaciones cualitativas (AD, A, B, C)
+- **Competencias por Área**: Gestión de competencias según áreas curriculares del CNB
+- **Seguimiento Progresivo**: Monitoreo del avance de cada estudiante por período
 
-## 🛠️ Tecnologías
+### 👥 Gestión de Roles
+- **Administrador**: Acceso completo al sistema
+- **Coordinadora**: Supervisión y generación de reportes
+- **Tutor del Aula**: Gestión integral de su aula asignada
+- **Docente Área**: Evaluación específica por área curricular
+- **Docente Taller**: Registro de calificaciones en talleres
 
-- **Backend**: PHP 7.4+
-- **Base de Datos**: MySQL 5.7+ / MariaDB 10.2+
-- **Frontend**: Bootstrap 5, JavaScript
-- **Iconos**: Bootstrap Icons
+### 📊 Sistema de Reportes
+- **Exportación Excel/CSV**: Descarga de datos con filtros personalizados
+- **Estadísticas en Tiempo Real**: Visualización del progreso académico
+- **Reportes Comparativos**: Análisis por grados, áreas y períodos
+- **Dashboard Administrativo**: Panel de control para directivos
 
-## 🎯 Funcionalidades
+## 🛠️ Tecnologías Utilizadas
+
+### Backend
+- **PHP 7.4+**: Lenguaje principal del servidor
+- **MySQL 5.7+/MariaDB 10.2+**: Base de datos relacional
+- **PDO**: Capa de acceso a datos segura
+
+### Frontend
+- **HTML5 & CSS3**: Estructura y estilos modernos
+- **Bootstrap 5**: Framework CSS responsivo
+- **JavaScript ES6**: Interactividad y funcionalidades dinámicas
+- **Bootstrap Icons**: Iconografía consistente
+
+### Características Técnicas
+- **Responsive Design**: Compatible con dispositivos móviles y tablets
+- **AJAX**: Guardado automático sin recargar página
+- **Arquitectura MVC**: Separación clara de responsabilidades
+- **Seguridad**: Protección contra inyección SQL y validaciones
+
+## 🎯 Funcionalidades Detalladas
 
 ### Matriz de Calificaciones
-- Visualización en tiempo real de calificaciones
-- Filtros por período, grado y área curricular
-- Guardado automático vía AJAX
-- Estadísticas de progreso por estudiante
-- Leyenda visual de niveles de logro (AD, A, B, C)
+- **Filtros Dinámicos**: Selección por período, aula y área curricular
+- **Registro Rápido**: Click directo en botones de calificación (AD, A, B, C)
+- **Guardado Automático**: Sincronización inmediata vía AJAX
+- **Progreso Visual**: Barras de completitud por estudiante
+- **Estadísticas en Vivo**: Contadores actualizados en tiempo real
 
-### Gestión de Roles
-- **Administrador**: Acceso completo al sistema
-- **Coordinadora**: Supervisión y reportes
-- **Tutor del Aula**: Edición de calificaciones del aula
-- **Docente Área**: Edición por área específica
-- **Docente Taller**: Edición de talleres
+### Panel de Administración
+- **Dashboard Ejecutivo**: Resumen general del sistema
+- **Gestión de Estudiantes**: CRUD completo con filtros
+- **Reportes Avanzados**: Múltiples formatos de exportación
+- **Estadísticas Detalladas**: Análisis por niveles educativos
 
-### Reportes y Exportación
-- Exportación a Excel/CSV
-- Reportes por estudiante, grado y período
-- Estadísticas generales del sistema
-- Progreso por competencias
+### Sistema de Usuarios
+- **Autenticación Segura**: Login con roles diferenciados
+- **Permisos Granulares**: Acceso controlado por funcionalidad
+- **Sesiones Seguras**: Manejo robusto de sesiones PHP
 
-## 📊 Uso del Sistema
+## 📊 Escalas de Calificación
 
-### Acceso Inicial
-1. Acceder a la URL del sistema
-2. Iniciar sesión con credenciales
-3. Ser redirigido según el rol
+Basado en el Currículo Nacional de la Educación Básica del Perú:
 
-### Registro de Calificaciones
-1. Seleccionar filtros (período, grado, área)
-2. Hacer clic en los botones de calificación (AD, A, B, C)
-3. Las calificaciones se guardan automáticamente
-4. Ver estadísticas en tiempo real
+| Calificación | Descripción | Significado |
+|--------------|-------------|-------------|
+| **AD** | Logro Destacado | El estudiante evidencia un nivel superior a lo esperado |
+| **A** | Logro Esperado | El estudiante evidencia el nivel esperado |
+| **B** | En Proceso | El estudiante está próximo o cerca al nivel esperado |
+| **C** | En Inicio | El estudiante muestra un progreso mínimo |
 
-### Generación de Reportes
-1. Acceder al panel de administración
-2. Seleccionar tipo de reporte
-3. Configurar filtros necesarios
-4. Exportar en formato deseado
 
-## 🔒 Seguridad
+## 👤 Usuarios de Demostración
 
-- Autenticación obligatoria para todas las páginas
-- Control de permisos por rol
-- Protección contra inyección SQL con PDO
-- Validación de datos en frontend y backend
-- Configuración de seguridad en .htaccess
+| Email | Contraseña | Rol |
+|-------|------------|-----|
+| admin@colegio.edu.pe | 123456 | Administrador |
+| coordinadora@colegio.edu.pe | 123456 | Coordinadora |
+| kelly.correa@colegio.edu.pe | 123456 | Tutor del Aula |
+| docente.area@colegio.edu.pe | 123456 | Docente Área |
+| docente.taller@colegio.edu.pe | 123456 | Docente Taller |
 
+## 📱 Uso del Sistema
+
+### Para Docentes
+1. **Acceder al Sistema**: Login con credenciales asignadas
+2. **Seleccionar Filtros**: Período, aula y área curricular
+3. **Registrar Calificaciones**: Click en botones AD, A, B, C
+4. **Seguimiento**: Visualizar progreso en tiempo real
+
+### Para Coordinadores
+1. **Dashboard**: Acceso a estadísticas generales
+2. **Reportes**: Generación de informes personalizados
+3. **Supervisión**: Monitoreo del avance académico
+4. **Exportación**: Descarga de datos en Excel/CSV
+
+### Para Administradores
+1. **Gestión Completa**: Acceso a todas las funcionalidades
+2. **Configuración**: Gestión de usuarios y parámetros
+3. **Mantenimiento**: Supervisión del sistema
+4. **Reportes Ejecutivos**: Análisis estadísticos avanzados
+
+## 🔒 Características de Seguridad
+
+### Autenticación y Autorización
+- **Hash MD5**: Encriptación de contraseñas (recomendable migrar a bcrypt)
+- **Control de Sesiones**: Manejo seguro de sesiones PHP
+- **Validación de Roles**: Verificación de permisos por funcionalidad
+
+### Protección de Datos
+- **Prevención SQL Injection**: Uso de prepared statements
+- **Validación de Entrada**: Sanitización de datos del usuario
+- **Protección XSS**: Escape de contenido HTML
+- **Headers de Seguridad**: Configuración en .htaccess
+
+### Configuración del Servidor
+- **Ocultación de Errores**: Sin exposición de información sensible
+- **Protección de Archivos**: Restricción de acceso a configuraciones
+- **Compresión GZIP**: Optimización de transferencia
+- **Cache Headers**: Mejora de rendimiento
+
+## 📁 Estructura del Proyecto
+
+```
+sistema-calificaciones/
+├── config/
+│   ├── database.php          # Configuración de base de datos
+│   └── init.php              # Configuración inicial del sistema
+├── classes/
+│   ├── Auth.php              # Clase de autenticación
+│   ├── Calificaciones.php    # Lógica de calificaciones
+│   └── Reportes.php          # Generación de reportes
+├── ajax/
+│   └── guardar_calificacion.php  # Endpoint para AJAX
+├── export/
+│   └── excel.php             # Exportación a Excel/CSV
+├── admin/
+│   ├── index.php             # Panel de administración
+│   ├── estudiantes.php       # Gestión de estudiantes
+│   └── reportes.php          # Reportes avanzados
+├── assets/
+│   ├── css/
+│   └── js/
+├── matriz_calificaciones.php  # Matriz principal
+├── login.php                 # Página de login
+├── index.php                 # Redirección inicial
+├── logout.php                # Cerrar sesión
+├── database.sql              # Script de base de datos
+├── .htaccess                 # Configuración Apache
+└── README.md                 # Este archivo
+```
+
+
+## 📄 Licencia
+
+Este proyecto está bajo la Licencia MIT. Ver el archivo `LICENSE` para más detalles.
+
+
+## 🔄 Actualizaciones
+
+### Versión 1.0.0
+- ✅ Matriz de calificaciones interactiva
+- ✅ Sistema de roles y permisos
+- ✅ Exportación a Excel/CSV
+- ✅ Dashboard administrativo
+- ✅ Responsive design
+
+### Próximas Versiones
+- 🔄 Migración a bcrypt para contraseñas
+- 🔄 API REST para integración móvil
+- 🔄 Reportes PDF automatizados
+- 🔄 Notificaciones en tiempo real
+- 🔄 Backup automático de datos
+
+---
+
+**Desarrollado con ❤️ para la educación peruana**

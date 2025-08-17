@@ -35,7 +35,7 @@ function validateEmail($email) {
 }
 
 // Constantes del sistema
-define('SISTEMA_NOMBRE', 'Sistema de Calificaciones');
+define('SISTEMA_NOMBRE', 'Sistema de Calificaciones por Competencias');
 define('SISTEMA_VERSION', '1.0.0');
 define('ROLES_PERMITIDOS', ['Administrador', 'Coordinadora', 'Tutor del Aula', 'Docente Área', 'Docente Taller']);
 define('CALIFICACIONES_VALIDAS', ['AD', 'A', 'B', 'C']);

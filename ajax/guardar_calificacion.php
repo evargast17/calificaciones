@@ -66,7 +66,8 @@ try {
                 'estudiante_id' => $estudiante_id,
                 'competencia_id' => $competencia_id,
                 'calificacion' => $calificacion,
-                'fecha' => date('Y-m-d')
+                'fecha' => date('Y-m-d'),
+                'docente_id' => $_SESSION['user_id']
             ]
         ]);
     } else {

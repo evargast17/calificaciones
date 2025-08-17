@@ -39,71 +39,6 @@ class Reportes {
                   ORDER BY e.apellidos, e.nombres, comp.codigo";
         
         $stmt = $this->conn->prepare($query);
-        $stmt->execute([$periodo_id, $grado_id, $area_id]);
-        
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
-    
-    public function getReporteEstudiante($estudiante_id, $periodo_id = null) {
-        $where_periodo = $periodo_id ? "AND cal.periodo_id = ?" : "";
-        $params = [$estudiante_id];
-        if ($periodo_id) $params[] = $periodo_id;
-        
-        $query = "SELECT 
-                    e.nombres,
-                    e.apellidos,
-                    e.dni,
-                    g.nombre as grado,
-                    g.seccion,
-                    n.nombre as nivel,
-                    ac.nombre as area,
-                    comp.codigo,
-                    comp.descripcion as competencia,
-                    cal.calificacion,
-                    cal.fecha_evaluacion,
-                    cal.observaciones,
-                    p.nombre as periodo,
-                    CONCAT(u.nombre, ' ', u.apellidos) as docente
-                  FROM estudiantes e
-                  INNER JOIN grados g ON e.grado_id = g.id
-                  INNER JOIN niveles n ON g.nivel_id = n.id
-                  LEFT JOIN calificaciones cal ON e.id = cal.estudiante_id
-                  LEFT JOIN competencias comp ON cal.competencia_id = comp.id
-                  LEFT JOIN areas_curriculares ac ON comp.area_curricular_id = ac.id
-                  LEFT JOIN periodos p ON cal.periodo_id = p.id
-                  LEFT JOIN usuarios u ON cal.docente_id = u.id
-                  WHERE e.id = ? $where_periodo AND e.activo = 1
-                  ORDER BY ac.nombre, comp.codigo";
-        
-        $stmt = $this->conn->prepare($query);
-        $stmt->execute($params);
-        
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
-    
-    public function getEstadisticasGrado($grado_id, $periodo_id) {
-        $query = "SELECT 
-                    COUNT(DISTINCT e.id) as total_estudiantes,
-                    COUNT(DISTINCT comp.id) as total_competencias,
-                    COUNT(*) as total_evaluaciones_posibles,
-                    SUM(CASE WHEN cal.calificacion IS NOT NULL THEN 1 ELSE 0 END) as evaluaciones_realizadas,
-                    SUM(CASE WHEN cal.calificacion = 'AD' THEN 1 ELSE 0 END) as destacado,
-                    SUM(CASE WHEN cal.calificacion = 'A' THEN 1 ELSE 0 END) as esperado,
-                    SUM(CASE WHEN cal.calificacion = 'B' THEN 1 ELSE 0 END) as proceso,
-                    SUM(CASE WHEN cal.calificacion = 'C' THEN 1 ELSE 0 END) as inicio,
-                    ac.nombre as area,
-                    ac.id as area_id
-                  FROM estudiantes e
-                  CROSS JOIN competencias comp
-                  INNER JOIN areas_curriculares ac ON comp.area_curricular_id = ac.id
-                  LEFT JOIN calificaciones cal ON e.id = cal.estudiante_id 
-                    AND comp.id = cal.competencia_id 
-                    AND cal.periodo_id = ?
-                  WHERE e.grado_id = ? AND e.activo = 1
-                  GROUP BY ac.id, ac.nombre
-                  ORDER BY ac.nombre";
-        
-        $stmt = $this->conn->prepare($query);
         $stmt->execute([$periodo_id, $grado_id]);
         
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -224,6 +159,125 @@ class Reportes {
         
         $stmt = $this->conn->prepare($query);
         $stmt->execute([$periodo_id, $area_id]);
+        
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+    
+    public function getEstadisticasDocente($docente_id, $periodo_id = null) {
+        $where_periodo = $periodo_id ? "AND cal.periodo_id = ?" : "";
+        $params = [$docente_id];
+        if ($periodo_id) $params[] = $periodo_id;
+        
+        $query = "SELECT 
+                    ac.nombre as area,
+                    g.nombre as grado,
+                    g.seccion,
+                    COUNT(cal.id) as total_calificaciones,
+                    SUM(CASE WHEN cal.calificacion = 'AD' THEN 1 ELSE 0 END) as destacado,
+                    SUM(CASE WHEN cal.calificacion = 'A' THEN 1 ELSE 0 END) as esperado,
+                    SUM(CASE WHEN cal.calificacion = 'B' THEN 1 ELSE 0 END) as proceso,
+                    SUM(CASE WHEN cal.calificacion = 'C' THEN 1 ELSE 0 END) as inicio,
+                    ROUND(AVG(CASE 
+                        WHEN cal.calificacion = 'AD' THEN 4
+                        WHEN cal.calificacion = 'A' THEN 3
+                        WHEN cal.calificacion = 'B' THEN 2
+                        WHEN cal.calificacion = 'C' THEN 1
+                        ELSE 0
+                    END), 2) as promedio_numerico
+                  FROM calificaciones cal
+                  INNER JOIN competencias comp ON cal.competencia_id = comp.id
+                  INNER JOIN areas_curriculares ac ON comp.area_curricular_id = ac.id
+                  INNER JOIN estudiantes e ON cal.estudiante_id = e.id
+                  INNER JOIN grados g ON e.grado_id = g.id
+                  WHERE cal.docente_id = ? $where_periodo
+                  GROUP BY ac.id, g.id
+                  ORDER BY ac.nombre, g.nombre";
+        
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute($params);
+        
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+    
+    public function getComparativoGrados($area_id, $periodo_id) {
+        $query = "SELECT 
+                    CONCAT(n.nombre, ' ', g.nombre, ' - ', g.seccion) as grado_completo,
+                    COUNT(DISTINCT e.id) as total_estudiantes,
+                    COUNT(cal.id) as total_evaluaciones,
+                    SUM(CASE WHEN cal.calificacion = 'AD' THEN 1 ELSE 0 END) as destacado,
+                    SUM(CASE WHEN cal.calificacion = 'A' THEN 1 ELSE 0 END) as esperado,
+                    SUM(CASE WHEN cal.calificacion = 'B' THEN 1 ELSE 0 END) as proceso,
+                    SUM(CASE WHEN cal.calificacion = 'C' THEN 1 ELSE 0 END) as inicio,
+                    ROUND((SUM(CASE WHEN cal.calificacion IN ('AD', 'A') THEN 1 ELSE 0 END) / 
+                           NULLIF(COUNT(cal.id), 0)) * 100, 1) as porcentaje_satisfactorio
+                  FROM grados g
+                  INNER JOIN niveles n ON g.nivel_id = n.id
+                  LEFT JOIN estudiantes e ON g.id = e.grado_id AND e.activo = 1
+                  LEFT JOIN calificaciones cal ON e.id = cal.estudiante_id AND cal.periodo_id = ?
+                  LEFT JOIN competencias comp ON cal.competencia_id = comp.id AND comp.area_curricular_id = ?
+                  WHERE g.activo = 1
+                  GROUP BY g.id
+                  ORDER BY n.id, g.nombre";
+        
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute([$periodo_id, $area_id]);
+        
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+    
+    public function getReporteDetallado($filtros = []) {
+        $where_conditions = ["e.activo = 1"];
+        $params = [];
+        
+        if (!empty($filtros['grado_id'])) {
+            $where_conditions[] = "e.grado_id = ?";
+            $params[] = $filtros['grado_id'];
+        }
+        
+        if (!empty($filtros['area_id'])) {
+            $where_conditions[] = "comp.area_curricular_id = ?";
+            $params[] = $filtros['area_id'];
+        }
+        
+        if (!empty($filtros['periodo_id'])) {
+            $where_conditions[] = "cal.periodo_id = ?";
+            $params[] = $filtros['periodo_id'];
+        }
+        
+        if (!empty($filtros['docente_id'])) {
+            $where_conditions[] = "cal.docente_id = ?";
+            $params[] = $filtros['docente_id'];
+        }
+        
+        $where_clause = implode(" AND ", $where_conditions);
+        
+        $query = "SELECT 
+                    CONCAT(e.apellidos, ', ', e.nombres) as estudiante_completo,
+                    e.dni,
+                    CONCAT(n.nombre, ' ', g.nombre, ' - ', g.seccion) as grado_completo,
+                    ac.nombre as area,
+                    comp.codigo,
+                    comp.descripcion as competencia,
+                    cal.calificacion,
+                    cal.observaciones,
+                    cal.fecha_evaluacion,
+                    p.nombre as periodo,
+                    CONCAT(u.nombre, ' ', u.apellidos) as docente,
+                    r.nombre as rol_docente
+                  FROM estudiantes e
+                  INNER JOIN grados g ON e.grado_id = g.id
+                  INNER JOIN niveles n ON g.nivel_id = n.id
+                  LEFT JOIN calificaciones cal ON e.id = cal.estudiante_id
+                  LEFT JOIN competencias comp ON cal.competencia_id = comp.id
+                  LEFT JOIN areas_curriculares ac ON comp.area_curricular_id = ac.id
+                  LEFT JOIN periodos p ON cal.periodo_id = p.id
+                  LEFT JOIN usuarios u ON cal.docente_id = u.id
+                  LEFT JOIN roles r ON u.rol_id = r.id
+                  WHERE $where_clause
+                  ORDER BY e.apellidos, e.nombres, ac.nombre, comp.codigo";
+        
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute($params);
         
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
