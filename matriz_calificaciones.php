@@ -146,11 +146,156 @@ $puede_editar = $auth->hasPermission(['Administrador', 'Tutor del Aula', 'Docent
                                 <?php echo $periodo['nombre'] . ' - ' . $periodo['año']; ?>
                             </option>
                         <?php endforeach; ?>
-                        
-                    </div>
+                    </select>
                 </div>
                 
-            </div>
+                <div class="filtro-grupo">
+                    <label class="filtro-label">
+                        <i class="bi bi-mortarboard me-1"></i>
+                        Grado y Sección
+                    </label>
+                    <select name="grado_id" class="filtro-select" onchange="this.form.submit()">
+                        <?php foreach ($grados as $grado): ?>
+                            <option value="<?php echo $grado['id']; ?>" <?php echo $grado_id == $grado['id'] ? 'selected' : ''; ?>>
+                                <?php echo $grado['nivel_nombre'] . ' ' . $grado['nombre'] . ' - ' . $grado['seccion']; ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                
+                <div class="filtro-grupo">
+                    <label class="filtro-label">
+                        <i class="bi bi-book me-1"></i>
+                        Área Curricular
+                    </label>
+                    <select name="area_id" class="filtro-select" onchange="this.form.submit()">
+                        <?php foreach ($areas as $area): ?>
+                            <option value="<?php echo $area['id']; ?>" <?php echo $area_id == $area['id'] ? 'selected' : ''; ?>>
+                                <?php echo $area['nombre']; ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                
+                <div class="filtro-grupo">
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-modern" style="background: var(--gradient-success); color: white;" onclick="validarTodo()">
+                            <i class="bi bi-check-circle"></i>
+                            Validar
+                        </button>
+                        <a href="export/excel.php?<?php echo http_build_query($_GET); ?>" class="btn btn-modern" style="background: var(--gradient-info); color: white;" target="_blank">
+                            <i class="bi bi-download"></i>
+                            Exportar
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Matriz de Calificaciones -->
+    <div class="container">
+        <div class="matriz-container">
+            <table class="matriz-table">
+                <thead>
+                    <tr>
+                        <th class="estudiante-header-cell">
+                            <i class="bi bi-people-fill me-2"></i>
+                            Estudiantes
+                            <div class="small opacity-75 mt-1">
+                                <?php echo count($estudiantes); ?> registrados
+                            </div>
+                        </th>
+                        <?php foreach ($competencias as $competencia): ?>
+                            <?php
+                            // Calcular progreso de la competencia
+                            $estudiantes_evaluados = 0;
+                            $total_estudiantes = count($estudiantes);
+                            foreach ($estudiantes as $est) {
+                                if (isset($est['calificaciones'][$competencia['id']])) {
+                                    $estudiantes_evaluados++;
+                                }
+                            }
+                            $progreso_competencia = $total_estudiantes > 0 ? round(($estudiantes_evaluados / $total_estudiantes) * 100) : 0;
+                            ?>
+                            <th class="competencia-header-cell" tabindex="0">
+                                <div class="competencia-codigo"><?php echo $competencia['codigo']; ?></div>
+                                <div class="competencia-progreso"><?php echo $estudiantes_evaluados; ?>/<?php echo $total_estudiantes; ?> (<?php echo $progreso_competencia; ?>%)</div>
+                                
+                                <div class="tooltip-competencia">
+                                    <strong><?php echo $competencia['codigo']; ?></strong><br>
+                                    <?php echo htmlspecialchars(substr($competencia['descripcion'], 0, 200)); ?>
+                                    <?php if (strlen($competencia['descripcion']) > 200): ?>...<?php endif; ?>
+                                </div>
+                            </th>
+                        <?php endforeach; ?>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($estudiantes as $estudiante_id => $estudiante): ?>
+                        <?php
+                        // Calcular progreso del estudiante
+                        $competencias_evaluadas = count($estudiante['calificaciones']);
+                        $total_competencias = count($competencias);
+                        $progreso_estudiante = $total_competencias > 0 ? round(($competencias_evaluadas / $total_competencias) * 100) : 0;
+                        ?>
+                        <tr class="estudiante-row" data-estudiante="<?php echo $estudiante_id; ?>">
+                            <td class="estudiante-info-cell">
+                                <div class="estudiante-nombre">
+                                    <?php echo $estudiante['info']['apellidos'] . ', ' . $estudiante['info']['nombres']; ?>
+                                </div>
+                                <div class="estudiante-dni">
+                                    DNI: <?php echo $estudiante['info']['dni'] ?: 'No registrado'; ?>
+                                </div>
+                                <div class="progress-estudiante">
+                                    <div class="progress-bar-estudiante">
+                                        <div class="progress-fill-estudiante" style="width: <?php echo $progreso_estudiante; ?>%"></div>
+                                    </div>
+                                    <div class="progress-text-estudiante"><?php echo $progreso_estudiante; ?>%</div>
+                                </div>
+                            </td>
+                            <?php foreach ($competencias as $competencia): ?>
+                                <td class="calificacion-cell">
+                                    <div class="calificacion-group">
+                                        <?php 
+                                        $calificacion_actual = $estudiante['calificaciones'][$competencia['id']] ?? null;
+                                        $calificaciones_posibles = ['AD', 'A', 'B', 'C'];
+                                        ?>
+                                        <?php foreach ($calificaciones_posibles as $calif): ?>
+                                            <button class="calificacion-btn <?php echo $calificacion_actual === $calif ? 'active' : ''; ?>"
+                                                    data-estudiante="<?php echo $estudiante_id; ?>"
+                                                    data-competencia="<?php echo $competencia['id']; ?>"
+                                                    data-calificacion="<?php echo $calif; ?>"
+                                                    <?php echo !$puede_editar ? 'disabled' : ''; ?>
+                                                    data-tooltip="<?php echo $calif === 'AD' ? 'Logro Destacado' : ($calif === 'A' ? 'Logro Esperado' : ($calif === 'B' ? 'En Proceso' : 'En Inicio')); ?>">
+                                                <?php echo $calif; ?>
+                                            </button>
+                                        <?php endforeach; ?>
+                                    </div>
+                                </td>
+                            <?php endforeach; ?>
+                        </tr>
+                    <?php endforeach; ?>
+                    
+                    <?php if (empty($estudiantes)): ?>
+                        <tr>
+                            <td colspan="<?php echo count($competencias) + 1; ?>" class="text-center py-5">
+                                <div class="text-muted">
+                                    <i class="bi bi-info-circle" style="font-size: 3rem;"></i>
+                                    <h5 class="mt-3">No hay estudiantes registrados</h5>
+                                    <p>No se encontraron estudiantes para el grado seleccionado.</p>
+                                    <?php if ($auth->hasPermission(['Administrador', 'Coordinadora'])): ?>
+                                        <a href="admin/estudiantes.php" class="btn btn-primary">
+                                            <i class="bi bi-plus-circle me-2"></i>
+                                            Agregar Estudiantes
+                                        </a>
+                                    <?php endif; ?>
+                                </div>
+                            </td>
+                        </tr>
+                    <?php endif; ?>
+                </tbody>
+            </table>
         </div>
     </div>
 
@@ -205,6 +350,23 @@ $puede_editar = $auth->hasPermission(['Administrador', 'Tutor del Aula', 'Docent
                     <div class="estado-label">C</div>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Información adicional flotante -->
+    <div style="position: fixed; bottom: 20px; left: 20px; background: white; padding: 1rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); font-size: 0.8rem; color: #6b7280; max-width: 250px;">
+        <div class="fw-bold mb-2">Leyenda de Calificaciones</div>
+        <div><strong>AD:</strong> Logro Destacado</div>
+        <div><strong>A:</strong> Logro Esperado</div>
+        <div><strong>B:</strong> En Proceso</div>
+        <div><strong>C:</strong> En Inicio</div>
+        <hr class="my-2">
+        <div class="small">
+            <i class="bi bi-keyboard me-1"></i>
+            Presiona F1 para ver atajos de teclado
+        </div>
+        <div class="small last-update">
+            Actualizado: <?php echo date('H:i:s'); ?>
         </div>
     </div>
 
@@ -385,9 +547,11 @@ $puede_editar = $auth->hasPermission(['Administrador', 'Tutor del Aula', 'Docent
                 const porcentaje = Math.round((evaluadas / totalCompetencias) * 100);
 
                 // Actualizar barra de progreso del estudiante
-                const progressBar = document.querySelector(`[data-estudiante="${estudianteId}"] .progress-bar-estudiante`);
-                if (progressBar) {
-                    progressBar.style.width = porcentaje + '%';
+                const progressFill = document.querySelector(`[data-estudiante="${estudianteId}"] .progress-fill-estudiante`);
+                const progressText = document.querySelector(`[data-estudiante="${estudianteId}"] .progress-text-estudiante`);
+                
+                if (progressFill) {
+                    progressFill.style.width = porcentaje + '%';
                     
                     // Cambiar color según progreso
                     let color;
@@ -396,12 +560,16 @@ $puede_editar = $auth->hasPermission(['Administrador', 'Tutor del Aula', 'Docent
                     else if (porcentaje >= 50) color = 'var(--warning-color)';
                     else color = 'var(--danger-color)';
                     
-                    progressBar.style.backgroundColor = color;
+                    progressFill.style.backgroundColor = color;
                     
                     // Animación de actualización
                     if (SystemJS && SystemJS.Effects) {
-                        SystemJS.Effects.pulse(progressBar);
+                        SystemJS.Effects.pulse(progressFill);
                     }
+                }
+                
+                if (progressText) {
+                    progressText.textContent = porcentaje + '%';
                 }
             }
 
@@ -623,15 +791,15 @@ $puede_editar = $auth->hasPermission(['Administrador', 'Tutor del Aula', 'Docent
 
             // Métodos públicos para interacción externa
             getStats() {
-                return MatrizUtils.countGradesByType();
+                return SystemJS.MatrizUtils.countGradesByType();
             }
 
             getCompleteness() {
-                return MatrizUtils.validateMatrixCompleteness();
+                return SystemJS.MatrizUtils.validateMatrixCompleteness();
             }
 
             exportData() {
-                return MatrizUtils.exportMatrixData();
+                return SystemJS.MatrizUtils.exportMatrixData();
             }
 
             refresh() {
