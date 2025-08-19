@@ -2,7 +2,7 @@
  * ========================================
  * SISTEMA DE CALIFICACIONES POR COMPETENCIAS
  * JavaScript principal - main.js (corregido)
- * Versión: 1.0.1
+ * Versión: 1.0.2
  * Autor: Sistema de Calificaciones
  * ========================================
  */
@@ -20,13 +20,36 @@ SystemJS.Config = {
   autoSaveInterval: 30000, // 30 segundos
   animationDuration: 300,
   notificationDuration: 5000,
-  version: '1.0.1'
+  version: '1.0.2'
 };
 
 /**
  * Utilidades del sistema
  */
 SystemJS.Utils = {
+  /** Obtiene el elemento más cercano que coincida con el selector */
+  getClosestElement: function(element, selector) {
+    // Asegurar que tenemos un elemento válido
+    if (!element || typeof element.closest !== 'function') {
+      // Si es un nodo de texto, obtener su elemento padre
+      if (element && element.nodeType === Node.TEXT_NODE) {
+        element = element.parentElement;
+      }
+      // Si aún no es un elemento válido, retornar null
+      if (!element || typeof element.closest !== 'function') {
+        return null;
+      }
+    }
+    return element.closest(selector);
+  },
+
+  /** Verifica si un elemento es válido para operaciones DOM */
+  isValidElement: function(element) {
+    return element && 
+           element.nodeType === Node.ELEMENT_NODE && 
+           typeof element.closest === 'function';
+  },
+
   /** Formatea una fecha */
   formatDate: function (date, format = 'DD/MM/YYYY') {
     if (!date) return '';
@@ -788,310 +811,348 @@ SystemJS.Modal = {
  */
 SystemJS.Performance = {
   observers: [],
-
   init: function () {
-    this.setupIntersectionObserver();
-    this.setupPerformanceMonitoring();
-  },
+   this.setupIntersectionObserver();
+   this.setupPerformanceMonitoring();
+ },
 
-  setupIntersectionObserver: function () {
-    if ('IntersectionObserver' in window) {
-      const observer = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting) entry.target.classList.add('visible');
-          });
-        },
-        { threshold: 0.1, rootMargin: '50px 0px' }
-      );
+ setupIntersectionObserver: function () {
+   if ('IntersectionObserver' in window) {
+     const observer = new IntersectionObserver(
+       (entries) => {
+         entries.forEach((entry) => {
+           if (entry.isIntersecting) entry.target.classList.add('visible');
+         });
+       },
+       { threshold: 0.1, rootMargin: '50px 0px' }
+     );
 
-      this.observers.push(observer);
-      document.querySelectorAll('.lazy-load').forEach((el) => observer.observe(el));
-    }
-  },
+     this.observers.push(observer);
+     document.querySelectorAll('.lazy-load').forEach((el) => observer.observe(el));
+   }
+ },
 
-  setupPerformanceMonitoring: function () {
-    if ('PerformanceObserver' in window) {
-      try {
-        const observer = new PerformanceObserver((list) => {
-          const entries = list.getEntries();
-          entries.forEach((entry) => {
-            if (entry.duration > 100) {
-              console.warn(`Slow operation detected: ${entry.name} took ${entry.duration}ms`);
-            }
-          });
-        });
-        observer.observe({ entryTypes: ['navigation', 'measure'] });
-        this.observers.push(observer);
-      } catch (error) {
-        console.log('Performance monitoring not available');
-      }
-    }
-  },
+ setupPerformanceMonitoring: function () {
+   if ('PerformanceObserver' in window) {
+     try {
+       const observer = new PerformanceObserver((list) => {
+         const entries = list.getEntries();
+         entries.forEach((entry) => {
+           if (entry.duration > 100) {
+             console.warn(`Slow operation detected: ${entry.name} took ${entry.duration}ms`);
+           }
+         });
+       });
+       observer.observe({ entryTypes: ['navigation', 'measure'] });
+       this.observers.push(observer);
+     } catch (error) {
+       console.log('Performance monitoring not available');
+     }
+   }
+ },
 
-  measureFunction: function (name, fn) {
-    const start = performance.now();
-    const result = fn();
-    const end = performance.now();
-    if (SystemJS.Config.debug) console.log(`${name} execution time: ${(end - start).toFixed(2)}ms`);
-    return result;
-  },
+ measureFunction: function (name, fn) {
+   const start = performance.now();
+   const result = fn();
+   const end = performance.now();
+   if (SystemJS.Config.debug) console.log(`${name} execution time: ${(end - start).toFixed(2)}ms`);
+   return result;
+ },
 
-  cleanup: function () {
-    this.observers.forEach((observer) => observer && observer.disconnect && observer.disconnect());
-    this.observers = [];
-  }
+ cleanup: function () {
+   this.observers.forEach((observer) => observer && observer.disconnect && observer.disconnect());
+   this.observers = [];
+ }
 };
 
 /**
- * Gestión de errores global
- */
+* Gestión de errores global
+*/
 SystemJS.ErrorHandler = {
-  init: function () {
-    window.addEventListener('error', this.handleError.bind(this));
-    window.addEventListener('unhandledrejection', this.handlePromiseError.bind(this));
-  },
+ init: function () {
+   window.addEventListener('error', this.handleError.bind(this));
+   window.addEventListener('unhandledrejection', this.handlePromiseError.bind(this));
+ },
 
-  handleError: function (event) {
-    console.error('JavaScript Error:', event.error);
-    if (SystemJS.Config.debug) SystemJS.Notifications.error(`Error en la aplicación: ${event.error?.message || event.message}`, 10000);
-    this.logError({
-      type: 'javascript',
-      message: event.error?.message || String(event.message),
-      stack: event.error?.stack,
-      url: event.filename,
-      line: event.lineno,
-      column: event.colno,
-      timestamp: new Date().toISOString()
-    });
-  },
+ handleError: function (event) {
+   console.error('JavaScript Error:', event.error);
+   if (SystemJS.Config.debug) {
+     SystemJS.Notifications.error(`Error en la aplicación: ${event.error?.message || event.message}`, 10000);
+   }
+   this.logError({
+     type: 'javascript',
+     message: event.error?.message || String(event.message),
+     stack: event.error?.stack,
+     url: event.filename,
+     line: event.lineno,
+     column: event.colno,
+     timestamp: new Date().toISOString()
+   });
+ },
 
-  handlePromiseError: function (event) {
-    console.error('Unhandled Promise Rejection:', event.reason);
-    if (SystemJS.Config.debug) SystemJS.Notifications.error(`Error de promesa: ${event.reason}`, 10000);
-    this.logError({ type: 'promise', message: event.reason?.toString?.() || String(event.reason), timestamp: new Date().toISOString() });
-  },
+ handlePromiseError: function (event) {
+   console.error('Unhandled Promise Rejection:', event.reason);
+   if (SystemJS.Config.debug) {
+     SystemJS.Notifications.error(`Error de promesa: ${event.reason}`, 10000);
+   }
+   this.logError({ 
+     type: 'promise', 
+     message: event.reason?.toString?.() || String(event.reason), 
+     timestamp: new Date().toISOString() 
+   });
+ },
 
-  logError: function (errorData) {
-    if (SystemJS.Config.debug) {
-      const errors = SystemJS.Storage.get('errors', []);
-      errors.push(errorData);
-      if (errors.length > 50) errors.splice(0, errors.length - 50);
-      SystemJS.Storage.set('errors', errors);
-    }
-  },
+ logError: function (errorData) {
+   if (SystemJS.Config.debug) {
+     const errors = SystemJS.Storage.get('errors', []);
+     errors.push(errorData);
+     if (errors.length > 50) errors.splice(0, errors.length - 50);
+     SystemJS.Storage.set('errors', errors);
+   }
+ },
 
-  getStoredErrors: function () {
-    return SystemJS.Storage.get('errors', []);
-  },
+ getStoredErrors: function () {
+   return SystemJS.Storage.get('errors', []);
+ },
 
-  clearStoredErrors: function () {
-    SystemJS.Storage.remove('errors');
-  }
+ clearStoredErrors: function () {
+   SystemJS.Storage.remove('errors');
+ }
 };
 
 /**
- * Gestión de conectividad
- */
+* Gestión de conectividad
+*/
 SystemJS.Connection = {
-  isOnline: navigator.onLine,
-  callbacks: [],
+ isOnline: navigator.onLine,
+ callbacks: [],
 
-  init: function () {
-    window.addEventListener('online', this.handleOnline.bind(this));
-    window.addEventListener('offline', this.handleOffline.bind(this));
-    setInterval(this.checkConnection.bind(this), 30000);
-  },
+ init: function () {
+   window.addEventListener('online', this.handleOnline.bind(this));
+   window.addEventListener('offline', this.handleOffline.bind(this));
+   setInterval(this.checkConnection.bind(this), 30000);
+ },
 
-  handleOnline: function () {
-    this.isOnline = true;
-    SystemJS.Notifications.success('Conexión restaurada', 3000);
-    this.executeCallbacks('online');
-  },
+ handleOnline: function () {
+   this.isOnline = true;
+   SystemJS.Notifications.success('Conexión restaurada', 3000);
+   this.executeCallbacks('online');
+ },
 
-  handleOffline: function () {
-    this.isOnline = false;
-    SystemJS.Notifications.warning('Sin conexión a internet', 5000);
-    this.executeCallbacks('offline');
-  },
+ handleOffline: function () {
+   this.isOnline = false;
+   SystemJS.Notifications.warning('Sin conexión a internet', 5000);
+   this.executeCallbacks('offline');
+ },
 
-  checkConnection: function () {
-    fetch('/ping.php', { method: 'HEAD', cache: 'no-cache' })
-      .then(() => { if (!this.isOnline) this.handleOnline(); })
-      .catch(() => { if (this.isOnline) this.handleOffline(); });
-  },
+ checkConnection: function () {
+   fetch('/ping.php', { method: 'HEAD', cache: 'no-cache' })
+     .then(() => { if (!this.isOnline) this.handleOnline(); })
+     .catch(() => { if (this.isOnline) this.handleOffline(); });
+ },
 
-  onStatusChange: function (callback) { this.callbacks.push(callback); },
+ onStatusChange: function (callback) { 
+   this.callbacks.push(callback); 
+ },
 
-  executeCallbacks: function (status) {
-    this.callbacks.forEach((callback) => {
-      try { callback(status, this.isOnline); } catch (error) { console.error('Error in connection callback:', error); }
-    });
-  }
+ executeCallbacks: function (status) {
+   this.callbacks.forEach((callback) => {
+     try { 
+       callback(status, this.isOnline); 
+     } catch (error) { 
+       console.error('Error in connection callback:', error); 
+     }
+   });
+ }
 };
 
 /**
- * Inyectar estilos CSS necesarios
- */
+* Inyectar estilos CSS necesarios
+*/
 SystemJS.injectStyles = function () {
-  if (!document.getElementById('systemjs-styles')) {
-    const style = document.createElement('style');
-    style.id = 'systemjs-styles';
-    style.textContent = `
-      @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-      @keyframes slideOutRight { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
-      @keyframes modalSlideIn { from { opacity: 0; transform: translateY(-20px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
-      @keyframes modalSlideOut { from { opacity: 1; transform: translateY(0) scale(1); } to { opacity: 0; transform: translateY(-20px) scale(0.95); } }
-      .lazy-load { opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease, transform 0.6s ease; }
-      .lazy-load.visible { opacity: 1; transform: translateY(0); }
-      .systemjs-tooltip { position: absolute; background: #1f2937; color: white; padding: 8px 12px; border-radius: 6px; font-size: 12px; white-space: nowrap; z-index: 10000; opacity: 0; visibility: hidden; transition: all 0.2s ease; pointer-events: none; }
-      .systemjs-tooltip.show { opacity: 1; visibility: visible; }
-      .systemjs-tooltip::after { content: ''; position: absolute; top: 100%; left: 50%; margin-left: -5px; border: 5px solid transparent; border-top-color: #1f2937; }
-    `;
-    document.head.appendChild(style);
-  }
+ if (!document.getElementById('systemjs-styles')) {
+   const style = document.createElement('style');
+   style.id = 'systemjs-styles';
+   style.textContent = `
+     @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+     @keyframes slideOutRight { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
+     @keyframes modalSlideIn { from { opacity: 0; transform: translateY(-20px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+     @keyframes modalSlideOut { from { opacity: 1; transform: translateY(0) scale(1); } to { opacity: 0; transform: translateY(-20px) scale(0.95); } }
+     .lazy-load { opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease, transform 0.6s ease; }
+     .lazy-load.visible { opacity: 1; transform: translateY(0); }
+     .systemjs-tooltip { position: absolute; background: #1f2937; color: white; padding: 8px 12px; border-radius: 6px; font-size: 12px; white-space: nowrap; z-index: 10000; opacity: 0; visibility: hidden; transition: all 0.2s ease; pointer-events: none; }
+     .systemjs-tooltip.show { opacity: 1; visibility: visible; }
+     .systemjs-tooltip::after { content: ''; position: absolute; top: 100%; left: 50%; margin-left: -5px; border: 5px solid transparent; border-top-color: #1f2937; }
+   `;
+   document.head.appendChild(style);
+ }
 };
 
 /**
- * Configurar eventos globales
- */
+* Configurar eventos globales (CORREGIDO)
+*/
 SystemJS.setupGlobalEvents = function () {
-  document.addEventListener('dragstart', function (e) {
-    if (!e.target.hasAttribute('draggable')) e.preventDefault();
-  });
+ document.addEventListener('dragstart', function (e) {
+   if (!e.target.hasAttribute('draggable')) e.preventDefault();
+ });
 
-  document.addEventListener(
-    'mouseenter',
-    function (e) {
-      if (e.target.hasAttribute('data-tooltip')) SystemJS.showTooltip(e.target);
-    },
-    true
-  );
+ // Event listeners para tooltips (CORREGIDOS)
+ document.addEventListener('mouseenter', function (e) {
+   // Verificar que e.target es un elemento válido
+   if (SystemJS.Utils.isValidElement(e.target) && e.target.hasAttribute('data-tooltip')) {
+     SystemJS.showTooltip(e.target);
+   }
+ }, true);
 
-  document.addEventListener(
-    'mouseleave',
-    function (e) {
-      if (e.target.hasAttribute('data-tooltip')) SystemJS.hideTooltip();
-    },
-    true
-  );
+ document.addEventListener('mouseleave', function (e) {
+   // Verificar que e.target es un elemento válido
+   if (SystemJS.Utils.isValidElement(e.target) && e.target.hasAttribute('data-tooltip')) {
+     SystemJS.hideTooltip();
+   }
+ }, true);
 
-  if (SystemJS.Config.debug) {
-    document.addEventListener('click', function (e) {
-      console.log('Click event:', e.target);
-    });
-  }
+ // Event listener para demo login (CORREGIDO)
+ document.addEventListener('click', function (e) {
+   if (SystemJS.Config.debug) {
+     console.log('Click event:', e.target);
+   }
+
+   // Verificar que e.target es válido antes de usar closest
+   if (SystemJS.Utils.isValidElement(e.target)) {
+     const demoUser = SystemJS.Utils.getClosestElement(e.target, '.demo-user');
+     if (demoUser) {
+       const emailDiv = demoUser.querySelector('.demo-email');
+       if (emailDiv) {
+         const emailField = document.getElementById('email');
+         const passwordField = document.getElementById('password');
+         if (emailField && passwordField) {
+           emailField.value = emailDiv.textContent;
+           passwordField.value = '123456';
+           passwordField.focus();
+         }
+       }
+     }
+   }
+ });
 };
 
 /**
- * Cargar configuración guardada
- */
+* Cargar configuración guardada
+*/
 SystemJS.loadSavedConfig = function () {
-  const savedConfig = this.Storage.get('config', {});
-  if (savedConfig.theme) document.body.classList.add(`theme-${savedConfig.theme}`);
-  if (savedConfig.language) this.Config.language = savedConfig.language;
+ const savedConfig = this.Storage.get('config', {});
+ if (savedConfig.theme) document.body.classList.add(`theme-${savedConfig.theme}`);
+ if (savedConfig.language) this.Config.language = savedConfig.language;
 
-  const lastFilters = this.Storage.get('lastFilters');
-  if (lastFilters && window.location.pathname.includes('matriz')) {
-    Object.keys(lastFilters).forEach((key) => {
-      const select = document.querySelector(`[name="${key}"]`);
-      if (select && lastFilters[key]) select.value = lastFilters[key];
-    });
-  }
+ const lastFilters = this.Storage.get('lastFilters');
+ if (lastFilters && window.location.pathname.includes('matriz')) {
+   Object.keys(lastFilters).forEach((key) => {
+     const select = document.querySelector(`[name="${key}"]`);
+     if (select && lastFilters[key]) select.value = lastFilters[key];
+   });
+ }
 };
 
 /**
- * Sistema de tooltips simple
- */
+* Sistema de tooltips simple
+*/
 SystemJS.currentTooltip = null;
 
 SystemJS.showTooltip = function (element) {
-  const text = element.getAttribute('data-tooltip');
-  if (!text) return;
-  this.hideTooltip();
-  const tooltip = document.createElement('div');
-  tooltip.className = 'systemjs-tooltip';
-  tooltip.textContent = text;
-  document.body.appendChild(tooltip);
-  const rect = element.getBoundingClientRect();
-  const tooltipRect = tooltip.getBoundingClientRect();
-  tooltip.style.left = rect.left + rect.width / 2 - tooltipRect.width / 2 + 'px';
-  tooltip.style.top = rect.top - tooltipRect.height - 8 + 'px';
-  setTimeout(() => tooltip.classList.add('show'), 10);
-  this.currentTooltip = tooltip;
+ if (!SystemJS.Utils.isValidElement(element)) return;
+ 
+ const text = element.getAttribute('data-tooltip');
+ if (!text) return;
+ 
+ this.hideTooltip();
+ 
+ const tooltip = document.createElement('div');
+ tooltip.className = 'systemjs-tooltip';
+ tooltip.textContent = text;
+ document.body.appendChild(tooltip);
+ 
+ const rect = element.getBoundingClientRect();
+ const tooltipRect = tooltip.getBoundingClientRect();
+ tooltip.style.left = rect.left + rect.width / 2 - tooltipRect.width / 2 + 'px';
+ tooltip.style.top = rect.top - tooltipRect.height - 8 + 'px';
+ 
+ setTimeout(() => tooltip.classList.add('show'), 10);
+ this.currentTooltip = tooltip;
 };
 
 SystemJS.hideTooltip = function () {
-  if (this.currentTooltip) {
-    this.currentTooltip.classList.remove('show');
-    setTimeout(() => {
-      if (this.currentTooltip && this.currentTooltip.parentNode) this.currentTooltip.parentNode.removeChild(this.currentTooltip);
-      this.currentTooltip = null;
-    }, 200);
-  }
+ if (this.currentTooltip) {
+   this.currentTooltip.classList.remove('show');
+   setTimeout(() => {
+     if (this.currentTooltip && this.currentTooltip.parentNode) {
+       this.currentTooltip.parentNode.removeChild(this.currentTooltip);
+     }
+     this.currentTooltip = null;
+   }, 200);
+ }
 };
 
 /**
- * Funciones globales de compatibilidad
- */
+* Funciones globales de compatibilidad
+*/
 window.validarTodo = function () {
-  if (window.matrizInstance && window.matrizInstance.validarCompletitud) {
-    window.matrizInstance.validarCompletitud();
-  } else {
-    SystemJS.Notifications.warning('Función no disponible en este momento');
-  }
+ if (window.matrizInstance && window.matrizInstance.validarCompletitud) {
+   window.matrizInstance.validarCompletitud();
+ } else {
+   SystemJS.Notifications.warning('Función no disponible en este momento');
+ }
 };
 
 window.exportarDatos = function () {
-  document.dispatchEvent(new CustomEvent('app:export'));
+ document.dispatchEvent(new CustomEvent('app:export'));
 };
 
 window.refrescarEstadisticas = function () {
-  if (window.matrizInstance && window.matrizInstance.updateGeneralStats) {
-    window.matrizInstance.updateGeneralStats();
-    SystemJS.Notifications.success('Estadísticas actualizadas');
-  } else {
-    location.reload();
-  }
+ if (window.matrizInstance && window.matrizInstance.updateGeneralStats) {
+   window.matrizInstance.updateGeneralStats();
+   SystemJS.Notifications.success('Estadísticas actualizadas');
+ } else {
+   location.reload();
+ }
 };
 
 /**
- * Cleanup al salir de la página
- */
+* Cleanup al salir de la página
+*/
 window.addEventListener('beforeunload', function () {
-  SystemJS.Performance.cleanup();
+ SystemJS.Performance.cleanup();
 });
 
 /**
- * Inicialización del sistema
- */
+* Inicialización del sistema
+*/
 SystemJS.init = function () {
-  console.log(`🚀 Iniciando Sistema de Calificaciones v${this.Config.version}`);
-  this.ErrorHandler.init();
-  this.Connection.init();
-  this.Performance.init();
-  this.Keyboard.init();
-  this.injectStyles();
-  this.setupGlobalEvents();
-  this.loadSavedConfig();
-  console.log('✅ Sistema inicializado correctamente');
+ console.log(`🚀 Iniciando Sistema de Calificaciones v${this.Config.version}`);
+ this.ErrorHandler.init();
+ this.Connection.init();
+ this.Performance.init();
+ this.Keyboard.init();
+ this.injectStyles();
+ this.setupGlobalEvents();
+ this.loadSavedConfig();
+ console.log('✅ Sistema inicializado correctamente');
 };
 
 /**
- * Auto-inicialización cuando el DOM esté listo
- */
+* Auto-inicialización cuando el DOM esté listo
+*/
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', function () {
-    SystemJS.init();
-  });
+ document.addEventListener('DOMContentLoaded', function () {
+   SystemJS.init();
+ });
 } else {
-  SystemJS.init();
+ SystemJS.init();
 }
 
 /** Exportar para uso global */
 window.SystemJS = SystemJS;
 
 // Mensaje de carga exitosa
-console.log('✅ Sistema de Calificaciones por Competencias v1.0.1 cargado correctamente');
+console.log('✅ Sistema de Calificaciones por Competencias v1.0.2 cargado correctamente');
 console.log('📚 Para ver la ayuda, presiona F1 en la matriz de calificaciones');
 console.log('🔧 Modo debug:', SystemJS.Config.debug ? 'ACTIVADO' : 'DESACTIVADO');
